@@ -1,0 +1,65 @@
+// defines pins numbers
+const int trigPin = 13;
+const int echoPin = 12;
+const int buzzer = 18;
+const int ledPin = 1;
+
+// defines variables
+long duration;
+int distance;
+
+void setup() {
+  pinMode(trigPin, OUTPUT); // trig pin output
+  pinMode(echoPin, INPUT);  // echo pin input
+  pinMode(buzzer, OUTPUT);
+  pinMode(ledPin, OUTPUT);
+  Serial.begin(9600); // serial monitor
+}
+
+void loop() {
+  // send ultrasonic pulse
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  // receive echo
+  duration = pulseIn(echoPin, HIGH);
+
+  // calculate distance (cm)
+  distance = duration * 0.034 / 2;
+
+  // show distance
+  Serial.print("Distance: ");
+  Serial.print(distance);
+  Serial.println(" cm");
+
+  // ถ้าระยะไม่เกิน 300 cm ให้เตือน
+  if (distance > 0 && distance <= 300) {
+    // คำนวณความหน่วง (ยิ่งใกล้ ยิ่งหน่วงน้อย)
+    int delayTime = map(distance, 0, 300, 50, 800); 
+    // ระยะ 0 cm → delay 50 ms (ถี่มาก)
+    // ระยะ 300 cm → delay 800 ms (ช้า)
+
+    // แสดงผลเตือน
+    Serial.println("⚠️ Object detected!");
+
+    // เปิด LED และเสียงบัซเซอร์
+    digitalWrite(ledPin, HIGH);
+    digitalWrite(buzzer, HIGH);
+    delay(100);
+    
+    // ปิด LED และเสียง
+    digitalWrite(buzzer, LOW);
+    digitalWrite(ledPin, LOW);
+    
+    // หน่วงตามระยะ
+    delay(delayTime);
+  } else {
+    // ถ้าไม่มีวัตถุในระยะ 3 เมตร → ปิดทุกอย่าง
+    digitalWrite(buzzer, LOW);
+    digitalWrite(ledPin, LOW);
+  }
+}
+
