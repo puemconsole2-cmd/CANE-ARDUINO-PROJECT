@@ -1,0 +1,51 @@
+// defines pins numbers
+const int trigPin = 13;
+const int echoPin = 12;
+const int buzzer = 18;
+const int ledPin = 1;
+
+// defines variables
+long duration;
+int distance;
+
+void setup() {
+  pinMode(trigPin, OUTPUT); // trig pin output
+  pinMode(echoPin, INPUT);  // echo pin input
+  pinMode(buzzer, OUTPUT);
+  pinMode(ledPin, OUTPUT);
+  Serial.begin(9600); // serial monitor
+}
+
+void loop() {
+  // ส่งสัญญาณอัลตราโซนิก
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  // รับสัญญาณสะท้อน
+  duration = pulseIn(echoPin, HIGH);
+
+  // คำนวณระยะ (cm)
+  distance = duration * 0.034 / 2;
+
+  // แสดงระยะบน Serial Monitor
+  Serial.print("Distance: ");
+  Serial.print(distance);
+  Serial.println(" cm");
+
+  // หากวัตถุอยู่ใกล้กว่า 30 cm → มีเสียงเตือน
+  if (distance > 0 && distance <= 30) {
+    Serial.println("⚠️ Object too close!");
+
+    digitalWrite(ledPin, HIGH);
+    digitalWrite(buzzer, HIGH);
+  } else {
+    // ถ้าไม่มีวัตถุใกล้ → ปิดเสียงและไฟ
+    digitalWrite(ledPin, LOW);
+    digitalWrite(buzzer, LOW);
+  }
+
+  delay(200); // หน่วงเวลาเล็กน้อยเพื่ออ่านค่าต่อเนื่อง
+}
