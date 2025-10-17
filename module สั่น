@@ -1,0 +1,45 @@
+#include <Arduino_BuiltIn.h>
+
+// ประกาศขาพิน
+const int trigPin = 9;
+const int echoPin = 10;
+const int buzzer = 11;
+const int ledPin = 12;
+
+// ตัวแปรเก็บค่า
+long duration;
+int distance;
+
+void setup() {
+  pinMode(trigPin, OUTPUT);  // กำหนด trigPin เป็น Output
+  pinMode(echoPin, INPUT);   // กำหนด echoPin เป็น Input
+  pinMode(buzzer, OUTPUT);   // กำหนด buzzer เป็น Output
+  pinMode(ledPin, OUTPUT);   // กำหนด LED เป็น Output
+  Serial.begin(9600);        // เริ่มต้น Serial Monitor
+}
+
+void loop() {
+  // ส่งสัญญาณออกจาก Trig
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  // รับสัญญาณกลับจาก Echo
+  duration = pulseIn(echoPin, HIGH);
+  distance = duration * 0.034 / 2;
+
+  Serial.print("Distance: ");
+  Serial.println(distance);
+
+  if (distance < 10) {
+    digitalWrite(buzzer, HIGH);
+    digitalWrite(ledPin, HIGH);
+  } else {
+    digitalWrite(buzzer, LOW);
+    digitalWrite(ledPin, LOW);
+  }
+
+  delay(500);
+}
