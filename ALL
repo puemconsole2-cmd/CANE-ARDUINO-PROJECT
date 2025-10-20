@@ -1,0 +1,134 @@
+// =====================================================
+// 🔰 Combined System
+// 💧 Water Sensor + 4 Ultrasonic Sensors + Vibration Module + LED
+// =====================================================
+
+// --- Water Sensor ---
+const int waterSensor = A0;
+const int waterLed = 13;
+const int waterVibe = 2; // ใช้แทน buzzer -> Module สั่น
+
+// --- Ultrasonic Sensor 1 ---
+const int trigPin1 = 10;
+const int echoPin1 = 9;
+
+// --- Ultrasonic Sensor 2 ---
+const int trigPin2 = 8;
+const int echoPin2 = 7;
+
+// --- Ultrasonic Sensor 3 (with alert) ---
+const int trigPin3 = 6;
+const int echoPin3 = 5;
+const int ultraVibe = 18;
+const int ultraLed = 1;
+
+// --- Ultrasonic Sensor 4 (Vibration Module) ---
+const int trigPin4 = 4;
+const int echoPin4 = 3;
+const int vibe4 = 11;   // ขา module สั่น
+const int led4 = 12;    // LED แจ้งเตือน
+
+// --- Variables ---
+long duration1, duration2, duration3, duration4;
+int distance1, distance2, distance3, distance4;
+
+void setup() {
+  Serial.begin(115200);
+
+  // --- Water Sensor ---
+  pinMode(waterLed, OUTPUT);
+  pinMode(waterVibe, OUTPUT);
+
+  // --- Ultrasonic Sensors ---
+  pinMode(trigPin1, OUTPUT); pinMode(echoPin1, INPUT);
+  pinMode(trigPin2, OUTPUT); pinMode(echoPin2, INPUT);
+  pinMode(trigPin3, OUTPUT); pinMode(echoPin3, INPUT);
+  pinMode(trigPin4, OUTPUT); pinMode(echoPin4, INPUT);
+
+  // --- Outputs ---
+  pinMode(ultraVibe, OUTPUT);
+  pinMode(ultraLed, OUTPUT);
+  pinMode(vibe4, OUTPUT);
+  pinMode(led4, OUTPUT);
+
+  Serial.println("System Ready...");
+}
+
+void loop() {
+  // =====================================================
+  // 💧 WATER SENSOR
+  // =====================================================
+  int waterValue = analogRead(waterSensor);
+  Serial.print("WaterSensor = ");
+  Serial.println(waterValue);
+
+  if (waterValue > 400) {
+    digitalWrite(waterLed, HIGH);
+    digitalWrite(waterVibe, HIGH);  // Module สั่นทำงาน
+  } else {
+    digitalWrite(waterLed, LOW);
+    digitalWrite(waterVibe, LOW);
+  }
+
+  // =====================================================
+  // 🔰 ULTRASONIC SENSORS
+  // =====================================================
+  distance1 = readUltrasonic(trigPin1, echoPin1);
+  distance2 = readUltrasonic(trigPin2, echoPin2);
+  distance3 = readUltrasonic(trigPin3, echoPin3);
+  distance4 = readUltrasonic(trigPin4, echoPin4);
+
+  Serial.print("S1: "); Serial.print(distance1); Serial.print(" cm\t");
+  Serial.print("S2: "); Serial.print(distance2); Serial.print(" cm\t");
+  Serial.print("S3: "); Serial.print(distance3); Serial.print(" cm\t");
+  Serial.print("S4: "); Serial.print(distance4); Serial.println(" cm");
+
+  // --- Sensor 1 & 2: แค่แสดงระยะ ---
+  if (distance1 > 0 && distance1 <= 300)
+    Serial.println("⚠️ Sensor 1 detected object!");
+  if (distance2 > 0 && distance2 <= 300)
+    Serial.println("⚠️ Sensor 2 detected object!");
+
+  // --- Sensor 3: สั่นเตือนตามระยะ ---
+  if (distance3 > 0 && distance3 <= 30) {
+    int delayTime = map(distance3, 0, 30, 50, 800); // ใกล้มาก -> สั่นถี่
+    Serial.println("🚨 Sensor 3 ALERT!");
+
+    digitalWrite(ultraLed, HIGH);
+    digitalWrite(ultraVibe, HIGH);
+    delay(100);
+
+    digitalWrite(ultraLed, LOW);
+    digitalWrite(ultraVibe, LOW);
+    delay(delayTime);
+  } else {
+    digitalWrite(ultraVibe, LOW);
+    digitalWrite(ultraLed, LOW);
+  }
+
+  // --- Sensor 4: สั่นถ้าใกล้กว่า 10 cm ---
+  if (distance4 > 0 && distance4 < 10) {
+    digitalWrite(vibe4, HIGH);
+    digitalWrite(led4, HIGH);
+  } else {
+    digitalWrite(vibe4, LOW);
+    digitalWrite(led4, LOW);
+  }
+
+  delay(300);
+}
+
+// =====================================================
+// 📏 ฟังก์ชันอ่านค่าระยะ Ultrasonic
+// =====================================================
+int readUltrasonic(int trigPin, int echoPin) {
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  long duration = pulseIn(echoPin, HIGH, 30000); // timeout 30ms
+  int distance = duration * 0.034 / 2;
+  return distance;
+}
