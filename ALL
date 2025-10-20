@@ -1,0 +1,148 @@
+// =====================================================
+// 🔰 Multi-Sensor System
+// Ultrasonic 3 Sensors + Vibration Motor + Water Sensor
+// =====================================================
+
+// --- Ultrasonic Sensor 1 ---
+const int trigPin1 = 13;
+const int echoPin1 = 12;
+
+// --- Ultrasonic Sensor 2 ---
+const int trigPin2 = A2;
+const int echoPin2 = A3;
+
+// --- Ultrasonic Sensor 3 (Buzzer + LED) ---
+const int trigPin3 = A1;
+const int echoPin3 = A0;
+const int buzzer = 18;
+const int ledPin = 1;
+
+// --- Ultrasonic Sensor 4 (Vibration Motor) ---
+const int trigPin4 = 9;
+const int echoPin4 = 10;
+const int vibMotor = 11;
+const int ledVib = 12;
+
+// --- Water Sensor ---
+const int WaterSensor = A4;
+const int waterLed = 13;   // ใช้ LED แยกจากระบบอื่นได้ (หรือใช้ร่วมก็ได้)
+const int waterBuzzer = 2;
+
+// --- Variables ---
+long duration1, duration2, duration3, duration4;
+int distance1, distance2, distance3, distance4;
+int waterValue;
+
+void setup() {
+  Serial.begin(9600);
+
+  // --- Setup Ultrasonic 1–3 ---
+  pinMode(trigPin1, OUTPUT); pinMode(echoPin1, INPUT);
+  pinMode(trigPin2, OUTPUT); pinMode(echoPin2, INPUT);
+  pinMode(trigPin3, OUTPUT); pinMode(echoPin3, INPUT);
+  pinMode(buzzer, OUTPUT); pinMode(ledPin, OUTPUT);
+
+  // --- Vibration Motor Sensor ---
+  pinMode(trigPin4, OUTPUT); pinMode(echoPin4, INPUT);
+  pinMode(vibMotor, OUTPUT); pinMode(ledVib, OUTPUT);
+
+  // --- Water Sensor ---
+  pinMode(WaterSensor, INPUT);
+  pinMode(waterLed, OUTPUT);
+  pinMode(waterBuzzer, OUTPUT);
+
+  Serial.println("✅ All Systems Ready...");
+}
+
+void loop() {
+  // -----------------------------
+  // 📏 Read All Ultrasonic Sensors
+  // -----------------------------
+  distance1 = getDistance(trigPin1, echoPin1);
+  distance2 = getDistance(trigPin2, echoPin2);
+  distance3 = getDistance(trigPin3, echoPin3);
+  distance4 = getDistance(trigPin4, echoPin4);
+
+  // -----------------------------
+  // 🌊 Read Water Sensor
+  // -----------------------------
+  waterValue = analogRead(WaterSensor);
+
+  // -----------------------------
+  // 🧠 Display All Sensor Values
+  // -----------------------------
+  Serial.print("S1: "); Serial.print(distance1); Serial.print("cm\t");
+  Serial.print("S2: "); Serial.print(distance2); Serial.print("cm\t");
+  Serial.print("S3: "); Serial.print(distance3); Serial.print("cm\t");
+  Serial.print("S4: "); Serial.print(distance4); Serial.print("cm\t");
+  Serial.print("Water: "); Serial.println(waterValue);
+
+  // -----------------------------
+  // ⚠️ Sensor 1 & 2 Detection
+  // -----------------------------
+  if (distance1 > 0 && distance1 <= 300) Serial.println("⚠️ Sensor 1 detected object!");
+  if (distance2 > 0 && distance2 <= 300) Serial.println("⚠️ Sensor 2 detected object!");
+
+  // -----------------------------
+  // 🚨 Sensor 3 Alert (LED + Buzzer)
+  // -----------------------------
+  if (distance3 > 0 && distance3 <= 30) {
+    int delayTime = map(distance3, 0, 30, 50, 800); // ยิ่งใกล้ยิ่งถี่
+    Serial.println("🚨 Sensor 3 ALERT!");
+    digitalWrite(ledPin, HIGH);
+    digitalWrite(buzzer, HIGH);
+    delay(100);
+    digitalWrite(ledPin, LOW);
+    digitalWrite(buzzer, LOW);
+    delay(delayTime);
+  } else {
+    digitalWrite(buzzer, LOW);
+    digitalWrite(ledPin, LOW);
+  }
+
+  // -----------------------------
+  // 💢 Sensor 4 Vibration Motor
+  // -----------------------------
+  if (distance4 > 0 && distance4 < 10) {
+    digitalWrite(vibMotor, HIGH);
+    digitalWrite(ledVib, HIGH);
+    Serial.println("💢 Vibration Motor Activated!");
+  } else {
+    digitalWrite(vibMotor, LOW);
+    digitalWrite(ledVib, LOW);
+  }
+
+  // -----------------------------
+  // 🌊 Water Sensor
+  // -----------------------------
+  if (waterValue > 400) {
+    digitalWrite(waterLed, HIGH);
+    tone(waterBuzzer, 100);
+    Serial.println("💧 Water detected!");
+  } else {
+    digitalWrite(waterLed, LOW);
+    noTone(waterBuzzer);
+  }
+
+  // -----------------------------
+  delay(300); // หน่วงรอบหลัก
+}
+
+// =====================================================
+// 🔹 ฟังก์ชันวัดระยะ Ultrasonic
+// =====================================================
+int getDistance(int trigPin, int echoPin) {
+  long duration;
+  int distance;
+
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  duration = pulseIn(echoPin, HIGH, 30000); // timeout 30ms
+  if (duration == 0) return 0;              // ถ้าไม่รับค่า
+  distance = duration * 0.034 / 2;
+  return distance;
+}
