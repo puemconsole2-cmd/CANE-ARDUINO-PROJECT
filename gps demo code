@@ -1,0 +1,149 @@
+// =====================================================
+// 🔰 Combined System: Water + 4 Ultrasonic + GPS + Vibration + LED
+// =====================================================
+
+#include <SoftwareSerial.h>
+#include <TinyGPS++.h>
+
+// =================== WATER SENSOR ===================
+const int waterSensor = A0;
+const int waterLed = 13;
+const int waterVibe = 2;
+
+// =================== ULTRASONIC SENSORS ===================
+const int trigPin1 = 10; const int echoPin1 = 9;
+const int trigPin2 = 8;  const int echoPin2 = 7;
+const int trigPin3 = 6;  const int echoPin3 = 5;
+const int trigPin4 = A1; const int echoPin4 = A2; // เปลี่ยนขาไม่ชน GPS
+const int ultraVibe = 18; // Sensor3
+const int ultraLed = 1;   // Sensor3
+const int vibe4 = 11;     // Sensor4
+const int led4 = 12;      // Sensor4
+
+long duration1, duration2, duration3, duration4;
+int distance1, distance2, distance3, distance4;
+
+// =================== GPS ===================
+static const int RXPin = 4, TXPin = 3;
+static const uint32_t GPSBaud = 9600;
+
+TinyGPSPlus gps;
+SoftwareSerial ss(RXPin, TXPin);
+
+// =================== SETUP ===================
+void setup() {
+  Serial.begin(115200); // Serial Monitor ตั้งเป็น 115200
+  ss.begin(GPSBaud);
+
+  // --- Water Sensor ---
+  pinMode(waterLed, OUTPUT);
+  pinMode(waterVibe, OUTPUT);
+
+  // --- Ultrasonic Sensors ---
+  pinMode(trigPin1, OUTPUT); pinMode(echoPin1, INPUT);
+  pinMode(trigPin2, OUTPUT); pinMode(echoPin2, INPUT);
+  pinMode(trigPin3, OUTPUT); pinMode(echoPin3, INPUT);
+  pinMode(trigPin4, OUTPUT); pinMode(echoPin4, INPUT);
+
+  pinMode(ultraVibe, OUTPUT);
+  pinMode(ultraLed, OUTPUT);
+  pinMode(vibe4, OUTPUT);
+  pinMode(led4, OUTPUT);
+
+  Serial.println(F("✅ ระบบพร้อมใช้งาน..."));
+  Serial.println(F("⏳ รอรับสัญญาณ GPS..."));
+}
+
+// =================== LOOP ===================
+void loop() {
+  // ------------------- WATER SENSOR -------------------
+  int waterValue = analogRead(waterSensor);
+  Serial.print(F("WaterSensor = ")); Serial.println(waterValue);
+
+  if (waterValue > 400) {
+    digitalWrite(waterLed, HIGH);
+    digitalWrite(waterVibe, HIGH);
+  } else {
+    digitalWrite(waterLed, LOW);
+    digitalWrite(waterVibe, LOW);
+  }
+
+  // ------------------- ULTRASONIC -------------------
+  distance1 = readUltrasonic(trigPin1, echoPin1);
+  distance2 = readUltrasonic(trigPin2, echoPin2);
+  distance3 = readUltrasonic(trigPin3, echoPin3);
+  distance4 = readUltrasonic(trigPin4, echoPin4);
+
+  Serial.print(F("S1: ")); Serial.print(distance1); Serial.print(F(" cm\t"));
+  Serial.print(F("S2: ")); Serial.print(distance2); Serial.print(F(" cm\t"));
+  Serial.print(F("S3: ")); Serial.print(distance3); Serial.print(F(" cm\t"));
+  Serial.print(F("S4: ")); Serial.print(distance4); Serial.println(F(" cm"));
+
+  if (distance3 > 0 && distance3 <= 30) {
+    int delayTime = map(distance3, 0, 30, 50, 800);
+    digitalWrite(ultraLed, HIGH);
+    digitalWrite(ultraVibe, HIGH);
+    delay(100);
+    digitalWrite(ultraLed, LOW);
+    digitalWrite(ultraVibe, LOW);
+    delay(delayTime);
+  } else {
+    digitalWrite(ultraLed, LOW);
+    digitalWrite(ultraVibe, LOW);
+  }
+
+  if (distance4 > 0 && distance4 < 10) {
+    digitalWrite(vibe4, HIGH);
+    digitalWrite(led4, HIGH);
+  } else {
+    digitalWrite(vibe4, LOW);
+    digitalWrite(led4, LOW);
+  }
+
+  // ------------------- GPS -------------------
+  while (ss.available() > 0) {
+    gps.encode(ss.read());
+
+    if (gps.location.isUpdated()) {
+      double lat = gps.location.lat();
+      double lng = gps.location.lng();
+
+      Serial.println(F("📡 ข้อมูลตำแหน่งล่าสุด"));
+      Serial.print(F("Latitude : ")); Serial.println(lat, 6);
+      Serial.print(F("Longitude: ")); Serial.println(lng, 6);
+
+      Serial.print(F("วันที่: "));
+      Serial.print(gps.date.day());
+      Serial.print(F("/"));
+      Serial.print(gps.date.month());
+      Serial.print(F("/"));
+      Serial.println(gps.date.year());
+
+      Serial.print(F("เวลา: "));
+      Serial.print(gps.time.hour());
+      Serial.print(F(":"));
+      Serial.print(gps.time.minute());
+      Serial.print(F(":"));
+      Serial.println(gps.time.second());
+
+      Serial.print(F("🌍 เปิดแผนที่: "));
+      Serial.print(F("https://www.google.com/maps?q="));
+      Serial.print(lat, 6); Serial.print(F(",")); Serial.println(lng, 6);
+
+      Serial.println(F("--------------------------------"));
+    }
+  }
+
+  delay(300);
+}
+
+// =================== ฟังก์ชันอ่าน Ultrasonic ===================
+int readUltrasonic(int trigPin, int echoPin) {
+  digitalWrite(trigPin, LOW); delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH); delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  long duration = pulseIn(echoPin, HIGH, 30000);
+  int distance = duration * 0.034 / 2;
+  return distance;
+}
