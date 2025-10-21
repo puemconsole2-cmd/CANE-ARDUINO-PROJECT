@@ -1,0 +1,84 @@
+#include <Arduino_BuiltIn.h>
+
+// -----------------------------
+// 🔰 Ultrasonic 3 Sensors System
+// Sensor 1 + Sensor 2 = แสดงระยะ
+// Sensor 3 = เตือนด้วย Module สั่น
+// -----------------------------
+
+// --- Sensor 1 ---
+const int trigPin1 = 13;
+const int echoPin1 = 12;
+
+// --- Sensor 2 ---
+const int trigPin2 = 7;
+const int echoPin2 = 8;
+
+// --- Sensor 3 ---
+const int trigPin3 = 4;
+const int echoPin3 = 2;
+
+// --- Module สั่น ---
+const int vibMotor = A0; // ต่อเข้าขา A0 (หรือขาอื่นก็ได้ แต่ต้องเปลี่ยนในนี้)
+
+long duration1, duration2, duration3;
+int distance1, distance2, distance3;
+
+void setup() {
+  Serial.begin(9600);
+
+  // Sensor pins
+  pinMode(trigPin1, OUTPUT); pinMode(echoPin1, INPUT);
+  pinMode(trigPin2, OUTPUT); pinMode(echoPin2, INPUT);
+  pinMode(trigPin3, OUTPUT); pinMode(echoPin3, INPUT);
+
+  // Vibration motor pin
+  pinMode(vibMotor, OUTPUT);
+
+  Serial.println("System Ready...");
+}
+
+void loop() {
+  // Sensor 1
+  digitalWrite(trigPin1, LOW); delayMicroseconds(2);
+  digitalWrite(trigPin1, HIGH); delayMicroseconds(10);
+  digitalWrite(trigPin1, LOW);
+  duration1 = pulseIn(echoPin1, HIGH);
+  distance1 = duration1 * 0.034 / 2;
+
+  // Sensor 2
+  digitalWrite(trigPin2, LOW); delayMicroseconds(2);
+  digitalWrite(trigPin2, HIGH); delayMicroseconds(10);
+  digitalWrite(trigPin2, LOW);
+  duration2 = pulseIn(echoPin2, HIGH);
+  distance2 = duration2 * 0.034 / 2;
+
+  // Sensor 3
+  digitalWrite(trigPin3, LOW); delayMicroseconds(2);
+  digitalWrite(trigPin3, HIGH); delayMicroseconds(10);
+  digitalWrite(trigPin3, LOW);
+  duration3 = pulseIn(echoPin3, HIGH);
+  distance3 = duration3 * 0.034 / 2;
+
+  // แสดงผล
+  Serial.print("Sensor1: "); Serial.print(distance1); Serial.print(" cm\t");
+  Serial.print("Sensor2: "); Serial.print(distance2); Serial.print(" cm\t");
+  Serial.print("Sensor3: "); Serial.print(distance3); Serial.println(" cm");
+  Serial.println("------------------------");
+
+  // เงื่อนไขเตือน
+  if (distance1 > 0 && distance1 <= 10) {
+    Serial.println("sensor 1 KEYES เจอของข้างหน้า");
+    digitalWrite(vibMotor, HIGH);
+  } else if (distance2 > 0 && distance2 <= 10) {
+    Serial.println("sensor 2 KEYES เจอของข้างหน้า");
+    digitalWrite(vibMotor, HIGH);
+  } else if (distance3 > 0 && distance3 <= 10) {
+    Serial.println("sensor 3 KEYES เจอพื้นต่างระดับ");
+    digitalWrite(vibMotor, HIGH);
+  } else {
+    digitalWrite(vibMotor, LOW);
+  }
+
+  delay(66);
+}
