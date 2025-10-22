@@ -1,0 +1,32 @@
+// โค้ดสำหรับ Water Sensor ควบคุม Vibration Motor (มอเตอร์สั่น)
+
+// ประกาศขาพิน
+const int WaterSensor = A0;      // Water Sensor
+const int VibrationMotorPin = 2; // Vibration Motor
+
+void setup() {
+  Serial.begin(115200);          // เริ่มต้น Serial Monitor (สำหรับดูค่าเท่านั้น)
+  // กำหนดให้ขา Vibration Motor เป็น Output
+  pinMode(VibrationMotorPin, OUTPUT); 
+}
+
+void loop() {
+  // อ่านค่าจาก Water Sensor
+  int sensorValue = analogRead(WaterSensor);
+
+  Serial.print("WaterSensor = ");
+  Serial.println(sensorValue);
+
+  // เงื่อนไข: ถ้าค่า analog > 400 ถือว่า "โดนน้ำ"
+  if(sensorValue > 400){
+    // เมื่อโดนน้ำ: Vibration Motor ทำงาน (สั่น)
+    digitalWrite(VibrationMotorPin, HIGH); 
+  }
+  else {
+    // เมื่อไม่โดนน้ำ: Vibration Motor หยุดทำงาน (หยุดสั่น)
+    digitalWrite(VibrationMotorPin, LOW);  
+  }
+
+  // ดีเลย์ 100 มิลลิวินาที
+  delay(100);
+}
