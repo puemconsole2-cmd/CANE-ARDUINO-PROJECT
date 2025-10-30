@@ -1,0 +1,102 @@
+#include <Arduino_BuiltIn.h>
+
+// -----------------------------
+// 🔰 Ultrasonic 3 Sensors System
+// Sensor 1 + Sensor 2 = แสดงระยะ
+// Sensor 3 = เตือนด้วยการกระพริบ LED
+// ✅ สามารถตรวจจับพร้อมกันได้ทุก Sensor
+// -----------------------------
+
+// --- Sensor 1 ---
+const int trigPin1 = 13;
+const int echoPin1 = 12;
+
+// --- Sensor 2 ---
+const int trigPin2 = 7;
+const int echoPin2 = 8;
+
+// --- Sensor 3 ---
+const int trigPin3 = 4;
+const int echoPin3 = 2;
+
+// --- LED เตือน ---
+const int ledPin = A0;
+
+long duration1, duration2, duration3;
+int distance1, distance2, distance3;
+
+void setup() {
+  Serial.begin(9600);
+
+  pinMode(trigPin1, OUTPUT); pinMode(echoPin1, INPUT);
+  pinMode(trigPin2, OUTPUT); pinMode(echoPin2, INPUT);
+  pinMode(trigPin3, OUTPUT); pinMode(echoPin3, INPUT);
+  pinMode(ledPin, OUTPUT);
+
+  Serial.println("System Ready...");
+}
+
+void loop() {
+  // อ่านค่าระยะจากทั้ง 3 เซนเซอร์
+  distance1 = readUltrasonic(trigPin1, echoPin1);
+  distance2 = readUltrasonic(trigPin2, echoPin2);
+  distance3 = readUltrasonic(trigPin3, echoPin3);
+
+  // แสดงผลใน Serial Monitor
+  Serial.print("Sensor1: "); Serial.print(distance1); Serial.print(" cm\t");
+  Serial.print("Sensor2: "); Serial.print(distance2); Serial.print(" cm\t");
+  Serial.print("Sensor3: "); Serial.print(distance3); Serial.println(" cm");
+  Serial.println("------------------------");
+
+  bool detected = false; // ตัวเช็คว่ามี sensor ไหนเจอวัตถุไหม
+
+  // ตรวจจับพร้อมกันได้
+  if (distance1 > 0 && distance1 <= 10) {
+    Serial.println("Sensor 1 KEYES เจอของข้างหน้า");
+    blinkLED(1);
+    detected = true;
+  }
+
+  if (distance2 > 0 && distance2 <= 10) {
+    Serial.println("Sensor 2 KEYES เจอของข้างหน้า");
+    blinkLED(2);
+    detected = true;
+  }
+
+  if (distance3 > 0 && distance3 <= 10) {
+    Serial.println("Sensor 3 KEYES เจอพื้นต่างระดับ");
+    blinkLED(3);
+    detected = true;
+  }
+
+  // ถ้าไม่มี sensor ใดเจอของ → ปิดไฟ
+  if (!detected) {
+    digitalWrite(ledPin, LOW);
+  }
+
+  delay(300);
+}
+
+// ฟังก์ชันอ่าน Ultrasonic
+int readUltrasonic(int trigPin, int echoPin) {
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+  long duration = pulseIn(echoPin, HIGH, 20000); // timeout 20ms
+  int distance = duration * 0.034 / 2;
+  return distance;
+}
+
+// ฟังก์ชันกระพริบ LED
+void blinkLED(int times) {
+  for (int i = 0; i < times; i++) {
+    digitalWrite(ledPin, HIGH);
+    delay(500);
+    digitalWrite(ledPin, LOW);
+    delay(200);
+  }
+}
+
+  
